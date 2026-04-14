@@ -30,11 +30,13 @@ interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
+  onClick?: () => void;
 }
 
-const NavItem = ({ to, icon, label, active }: NavItemProps) => (
+const NavItem = ({ to, icon, label, active, onClick }: NavItemProps) => (
   <Link
     to={to}
+    onClick={onClick}
     className={cn(
       "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
       active 
@@ -184,14 +186,14 @@ export default function MedicalLayout({ children }: { children: React.ReactNode 
               </button>
             </div>
             <nav className="flex-1 space-y-2">
-              <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" active={location.pathname === '/'} />
-              <NavItem to="/expedientes" icon={<UserRound size={20} />} label="Expedientes" active={location.pathname.startsWith('/expedientes')} />
-              <NavItem to="/agenda" icon={<Calendar size={20} />} label="Agenda" active={location.pathname.startsWith('/agenda')} />
-              <NavItem to="/medicos" icon={<Users size={20} />} label="Médicos" active={location.pathname.startsWith('/medicos')} />
-              <NavItem to="/biblioteca" icon={<Library size={20} />} label="Biblioteca" active={location.pathname.startsWith('/biblioteca')} />
-              <NavItem to="/cargos" icon={<CreditCard size={20} />} label="Cargos" active={location.pathname.startsWith('/cargos')} />
-              <NavItem to="/cobros" icon={<Receipt size={20} />} label="Cobros" active={location.pathname.startsWith('/cobros')} />
-              <NavItem to="/audit" icon={<History size={20} />} label="Audit Log" active={location.pathname === '/audit'} />
+              <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" active={location.pathname === '/'} onClick={() => setIsMobileMenuOpen(false)} />
+              <NavItem to="/expedientes" icon={<UserRound size={20} />} label="Expedientes" active={location.pathname.startsWith('/expedientes')} onClick={() => setIsMobileMenuOpen(false)} />
+              <NavItem to="/agenda" icon={<Calendar size={20} />} label="Agenda" active={location.pathname.startsWith('/agenda')} onClick={() => setIsMobileMenuOpen(false)} />
+              <NavItem to="/medicos" icon={<Users size={20} />} label="Médicos" active={location.pathname.startsWith('/medicos')} onClick={() => setIsMobileMenuOpen(false)} />
+              <NavItem to="/biblioteca" icon={<Library size={20} />} label="Biblioteca" active={location.pathname.startsWith('/biblioteca')} onClick={() => setIsMobileMenuOpen(false)} />
+              <NavItem to="/cargos" icon={<CreditCard size={20} />} label="Cargos" active={location.pathname.startsWith('/cargos')} onClick={() => setIsMobileMenuOpen(false)} />
+              <NavItem to="/cobros" icon={<Receipt size={20} />} label="Cobros" active={location.pathname.startsWith('/cobros')} onClick={() => setIsMobileMenuOpen(false)} />
+              <NavItem to="/audit" icon={<History size={20} />} label="Audit Log" active={location.pathname === '/audit'} onClick={() => setIsMobileMenuOpen(false)} />
             </nav>
           </div>
         </>
