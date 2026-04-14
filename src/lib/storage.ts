@@ -33,11 +33,79 @@ export interface MedicalNote {
   folio: string;
 }
 
+export interface Appointment {
+  id: string;
+  patientId: string;
+  patientName: string;
+  date: string;
+  time: string;
+  type: string;
+  status: 'Confirmada' | 'En espera' | 'Pendiente' | 'Cancelada';
+}
+
+export interface Doctor {
+  id: string;
+  name: string;
+  specialty: string;
+  cedula: string;
+  phone: string;
+  email: string;
+}
+
+export interface LibraryFile {
+  id: string;
+  name: string;
+  type: string;
+  size: string;
+  date: string;
+  url: string;
+}
+
+export interface Charge {
+  id: string;
+  patientId: string;
+  patientName: string;
+  service: string;
+  amount: number;
+  date: string;
+}
+
+export interface Payment {
+  id: string;
+  patientId: string;
+  patientName: string;
+  amount: number;
+  iva: number;
+  total: number;
+  date: string;
+  method: string;
+  folio: string;
+}
+
 const MOCK_PATIENTS: Patient[] = [
-  { id: '1', name: 'Juan Pérez', age: 45, gender: 'Masculino', curp: 'PERJ790101HDFRRN01', lastVisit: '2024-03-10', lastDiagnosis: 'Hipertensión Arterial' },
-  { id: '2', name: 'María García', age: 32, gender: 'Femenino', curp: 'GARM920505MDFRRN02', lastVisit: '2024-03-12', lastDiagnosis: 'Rinofaringitis' },
-  { id: '3', name: 'Carlos López', age: 58, gender: 'Masculino', curp: 'LOCC660808HDFRRN03', lastVisit: '2024-03-14', lastDiagnosis: 'Diabetes Mellitus Tipo 2' },
-  { id: '4', name: 'Ana Martínez', age: 29, gender: 'Femenino', curp: 'MARA950101MDFRRN04', lastVisit: '2024-03-15', lastDiagnosis: 'Gastritis Crónica' },
+  { id: '1', name: 'Juan Pérez', age: 45, gender: 'Masculino', curp: 'PERJ790101HDFRRN01', lastVisit: '2024-03-10', lastDiagnosis: 'Hipertensión Arterial', email: 'juan.perez@email.com', phone: '555-0101' },
+  { id: '2', name: 'María López', age: 32, gender: 'Femenino', curp: 'LOPM920505MDFRRN02', lastVisit: '2024-03-12', lastDiagnosis: 'Rinofaringitis', email: 'maria.lopez@email.com', phone: '555-0202' },
+  { id: '3', name: 'Carlos García', age: 58, gender: 'Masculino', curp: 'GARC660808HDFRRN03', lastVisit: '2024-03-14', lastDiagnosis: 'Diabetes Mellitus Tipo 2', email: 'carlos.garcia@email.com', phone: '555-0303' },
+];
+
+const MOCK_DOCTORS: Doctor[] = [
+  { id: '1', name: 'Dr. Mario Mendoza', specialty: 'Medicina General', cedula: '12345678', phone: '555-123-4567', email: 'mario@mendoza.com' },
+  { id: '2', name: 'Lic. Ana Sosa', specialty: 'Asistente Médico', cedula: 'N/A', phone: '555-987-6543', email: 'ana@mendoza.com' },
+];
+
+const MOCK_APPOINTMENTS: Appointment[] = [
+  { id: '1', patientId: '1', patientName: 'Juan Pérez', date: new Date().toISOString().split('T')[0], time: '09:00', type: 'Consulta', status: 'Confirmada' },
+  { id: '2', patientId: '2', patientName: 'María López', date: new Date().toISOString().split('T')[0], time: '10:30', type: 'Seguimiento', status: 'Pendiente' },
+  { id: '3', patientId: '3', patientName: 'Carlos García', date: new Date().toISOString().split('T')[0], time: '12:00', type: 'Resultados', status: 'En espera' },
+  { id: '4', patientId: '1', patientName: 'Juan Pérez', date: new Date().toISOString().split('T')[0], time: '16:00', type: 'Urgencia', status: 'Pendiente' },
+];
+
+const MOCK_PAYMENTS: Payment[] = [
+  { id: '1', patientId: '1', patientName: 'Juan Pérez', amount: 800, iva: 128, total: 928, date: new Date().toISOString().split('T')[0], method: 'Efectivo', folio: 'REC-001' },
+  { id: '2', patientId: '2', patientName: 'María López', amount: 1200, iva: 192, total: 1392, date: new Date().toISOString().split('T')[0], method: 'Tarjeta', folio: 'REC-002' },
+  { id: '3', patientId: '3', patientName: 'Carlos García', amount: 800, iva: 128, total: 928, date: new Date().toISOString().split('T')[0], method: 'Transferencia', folio: 'REC-003' },
+  { id: '4', patientId: '1', patientName: 'Juan Pérez', amount: 1500, iva: 240, total: 1740, date: new Date().toISOString().split('T')[0], method: 'Efectivo', folio: 'REC-004' },
+  { id: '5', patientId: '2', patientName: 'María López', amount: 800, iva: 128, total: 928, date: new Date().toISOString().split('T')[0], method: 'Tarjeta', folio: 'REC-005' },
 ];
 
 export const storage = {
@@ -110,6 +178,73 @@ export const storage = {
   deleteNote: (id: string) => {
     const notes = storage.getNotes().filter(n => n.id !== id);
     localStorage.setItem('notes', JSON.stringify(notes));
+  },
+
+  // Agenda
+  getAppointments: (): Appointment[] => {
+    const stored = localStorage.getItem('appointments');
+    if (!stored) {
+      localStorage.setItem('appointments', JSON.stringify(MOCK_APPOINTMENTS));
+      return MOCK_APPOINTMENTS;
+    }
+    return JSON.parse(stored);
+  },
+
+  saveAppointment: (apt: Appointment) => {
+    const apts = storage.getAppointments();
+    const index = apts.findIndex(a => a.id === apt.id);
+    if (index >= 0) apts[index] = apt;
+    else apts.push(apt);
+    localStorage.setItem('appointments', JSON.stringify(apts));
+  },
+
+  // Doctors
+  getDoctors: (): Doctor[] => {
+    const stored = localStorage.getItem('doctors');
+    if (!stored) {
+      localStorage.setItem('doctors', JSON.stringify(MOCK_DOCTORS));
+      return MOCK_DOCTORS;
+    }
+    return JSON.parse(stored);
+  },
+
+  // Library
+  getLibraryFiles: (): LibraryFile[] => {
+    const stored = localStorage.getItem('library');
+    return stored ? JSON.parse(stored) : [];
+  },
+
+  saveLibraryFile: (file: LibraryFile) => {
+    const files = storage.getLibraryFiles();
+    files.push(file);
+    localStorage.setItem('library', JSON.stringify(files));
+  },
+
+  // Charges & Payments
+  getCharges: (): Charge[] => {
+    const stored = localStorage.getItem('charges');
+    return stored ? JSON.parse(stored) : [];
+  },
+
+  saveCharge: (charge: Charge) => {
+    const charges = storage.getCharges();
+    charges.push(charge);
+    localStorage.setItem('charges', JSON.stringify(charges));
+  },
+
+  getPayments: (): Payment[] => {
+    const stored = localStorage.getItem('payments');
+    if (!stored) {
+      localStorage.setItem('payments', JSON.stringify(MOCK_PAYMENTS));
+      return MOCK_PAYMENTS;
+    }
+    return JSON.parse(stored);
+  },
+
+  savePayment: (payment: Payment) => {
+    const payments = storage.getPayments();
+    payments.push(payment);
+    localStorage.setItem('payments', JSON.stringify(payments));
   },
 
   addAuditLog: (log: any) => {

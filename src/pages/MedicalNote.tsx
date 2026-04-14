@@ -65,6 +65,7 @@ export default function MedicalNote() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [patientNotes, setPatientNotes] = useState<MedicalNoteType[]>([]);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
@@ -85,9 +86,15 @@ export default function MedicalNote() {
   });
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pId = params.get('patientId');
+    
     const data = storage.getPatients();
     setPatients(data);
-    if (data.length > 0) {
+    
+    if (pId) {
+      setSelectedPatientId(pId);
+    } else if (data.length > 0) {
       setSelectedPatientId(data[0].id);
     }
   }, []);
@@ -108,6 +115,25 @@ export default function MedicalNote() {
   const isHighTemp = temperature > 38.0;
   const isLowSat = satO2 < 90;
 
+  const handleLoadNote = (note: MedicalNoteType) => {
+    setEditingNoteId(note.id);
+    reset({
+      systolic: note.vitals.systolic,
+      diastolic: note.vitals.diastolic,
+      temperature: note.vitals.temperature,
+      heartRate: note.vitals.heartRate,
+      weight: note.vitals.weight,
+      height: note.vitals.height,
+      satO2: note.vitals.satO2,
+      subjective: note.soap.subjective,
+      objective: note.soap.objective,
+      analysis: note.soap.analysis,
+      plan: note.soap.plan,
+      diagnosis: note.diagnosis,
+    });
+    toast.info(`Cargando nota folio: ${note.folio}`);
+  };
+
   const onSubmit = async (data: NoteFormValues) => {
     if (!selectedPatientId) {
       toast.error('Seleccione un paciente');
@@ -115,8 +141,8 @@ export default function MedicalNote() {
     }
     setIsSaving(true);
     try {
-      const newNote: MedicalNoteType = {
-        id: Math.random().toString(36).substr(2, 9),
+      const note: MedicalNoteType = {
+        id: editingNoteId || Math.random().toString(36).substr(2, 9),
         patientId: selectedPatientId,
         date: new Date().toISOString(),
         vitals: {
@@ -135,17 +161,21 @@ export default function MedicalNote() {
           plan: data.plan,
         },
         diagnosis: data.diagnosis,
-        folio: `FOL-${Date.now().toString().slice(-6)}`
+        folio: editingNoteId 
+          ? patientNotes.find(n => n.id === editingNoteId)?.folio || ''
+          : `FOL-${Date.now().toString().slice(-6)}`
       };
       
-      storage.saveNote(newNote);
-      toast.success('Nota médica guardada correctamente');
+      storage.saveNote(note);
+      toast.success(editingNoteId ? 'Nota médica actualizada' : 'Nota médica guardada');
+      
+      setEditingNoteId(null);
       
       // Refresh notes
       const updatedNotes = storage.getNotes(selectedPatientId);
       setPatientNotes(updatedNotes);
       
-      // Reset form fields but keep vitals for convenience
+      // Reset form fields
       reset({
         ...data,
         subjective: '',
@@ -533,7 +563,14 @@ export default function MedicalNote() {
               <div className="max-h-[300px] overflow-y-auto">
                 {patientNotes.length > 0 ? (
                   patientNotes.map((n) => (
-                    <div key={n.id} className="p-4 border-b border-[#E2E8F0] last:border-none hover:bg-[#EBFBCA] transition-colors cursor-pointer">
+                    <div 
+                      key={n.id} 
+                      onClick={() => handleLoadNote(n)}
+                      className={cn(
+                        "p-4 border-b border-[#E2E8F0] last:border-none hover:bg-[#EBFBCA] transition-colors cursor-pointer",
+                        editingNoteId === n.id && "bg-[#EBFBCA] border-l-4 border-l-[#047E29]"
+                      )}
+                    >
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="text-xs font-bold text-[#282829]">{new Date(n.date).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
