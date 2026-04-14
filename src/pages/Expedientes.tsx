@@ -24,7 +24,11 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+import { useAuth } from '../contexts/AuthContext';
+import AccessDenied from '../components/AccessDenied';
+
 export default function Expedientes() {
+  const { role } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,6 +38,10 @@ export default function Expedientes() {
   useEffect(() => {
     loadPatients();
   }, []);
+
+  if (role === 'PACIENTE') {
+    return <AccessDenied moduleName="Expedientes" requiredRole="Médico / Administrador" />;
+  }
 
   const loadPatients = () => {
     setPatients(storage.getPatients());
@@ -109,79 +117,85 @@ export default function Expedientes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-[#282829]">Expedientes Clínicos</h2>
           <p className="text-[#64748B] text-sm">Gestión integral bajo normativa NOM-024-SSA3-2012.</p>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={exportToExcel} variant="outline" className="gap-2 border-[#E2E8F0] hover:bg-[#F8FAFC]">
-            <FileSpreadsheet size={18} /> Excel
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button onClick={exportToExcel} variant="outline" className="flex-1 sm:flex-none gap-2 border-[#E2E8F0] hover:bg-[#F8FAFC] h-9 text-xs">
+            <FileSpreadsheet size={16} /> Excel
           </Button>
-          <Button onClick={exportToPDF} variant="outline" className="gap-2 border-[#E2E8F0] hover:bg-[#F8FAFC]">
-            <FileText size={18} /> PDF
+          <Button onClick={exportToPDF} variant="outline" className="flex-1 sm:flex-none gap-2 border-[#E2E8F0] hover:bg-[#F8FAFC] h-9 text-xs">
+            <FileText size={16} /> PDF
           </Button>
-          <Button onClick={handleNew} className="bg-[#047E29] hover:bg-[#036621] text-white gap-2 shadow-md">
-            <Plus size={18} /> Nuevo Expediente
+          <Button onClick={handleNew} className="w-full sm:w-auto bg-[#047E29] hover:bg-[#036621] text-white gap-2 shadow-md h-9 text-xs">
+            <Plus size={16} /> Nuevo Expediente
           </Button>
         </div>
       </div>
 
       <Card className="border-[#E2E8F0] shadow-sm rounded-xl overflow-hidden bg-white">
-        <CardHeader className="p-4 border-b border-[#E2E8F0] bg-white flex flex-row items-center justify-between">
+        <CardHeader className="p-4 border-b border-[#E2E8F0] bg-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <CardTitle className="text-sm font-bold">Listado de Pacientes</CardTitle>
-          <div className="relative w-64">
+          <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-2.5 text-[#64748B]" size={14} />
             <Input 
               placeholder="Buscar por nombre o CURP..." 
-              className="pl-9 h-9 text-xs border-[#E2E8F0]"
+              className="pl-9 h-9 text-xs border-[#E2E8F0] w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-[#F8FAFC]">
-                <TableHead className="text-[10px] uppercase font-bold text-[#64748B]">Paciente</TableHead>
-                <TableHead className="text-[10px] uppercase font-bold text-[#64748B]">CURP</TableHead>
-                <TableHead className="text-[10px] uppercase font-bold text-[#64748B]">Última Visita</TableHead>
-                <TableHead className="text-[10px] uppercase font-bold text-[#64748B]">Diagnóstico</TableHead>
-                <TableHead className="text-right text-[10px] uppercase font-bold text-[#64748B]">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPatients.map((patient) => (
-                <TableRow key={patient.id} className="hover:bg-[#EBFBCA]/30 transition-colors cursor-pointer" onClick={() => handleEdit(patient)}>
-                  <TableCell className="py-3">
-                    <div className="font-bold text-[13px]">{patient.name}</div>
-                    <div className="text-[11px] text-[#64748B]">{patient.age} años • {patient.gender}</div>
-                  </TableCell>
-                  <TableCell className="text-[12px] font-mono">{patient.curp}</TableCell>
-                  <TableCell className="text-[12px] text-[#64748B]">{patient.lastVisit}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-[#047E29] border-[#CDCC34] text-[10px] bg-white">
-                      {patient.lastDiagnosis || 'Sin registro'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-[#047E29]" onClick={() => navigate(`/notes?patientId=${patient.id}`)}>
-                        <FileText size={14} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-[#64748B]" onClick={() => handleEdit(patient)}>
-                        <Eye size={14} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-[#FC0000]" onClick={() => handleDelete(patient.id, patient.name)}>
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-[#F8FAFC]">
+                  <TableHead className="text-[10px] uppercase font-bold text-[#64748B] whitespace-nowrap">Paciente</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold text-[#64748B] whitespace-nowrap">CURP</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold text-[#64748B] whitespace-nowrap">Última Visita</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold text-[#64748B] whitespace-nowrap">Diagnóstico</TableHead>
+                  <TableHead className="text-right text-[10px] uppercase font-bold text-[#64748B] whitespace-nowrap">Acciones</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredPatients.map((patient) => (
+                  <TableRow key={patient.id} className="hover:bg-[#EBFBCA]/30 transition-colors cursor-pointer" onClick={() => handleEdit(patient)}>
+                    <TableCell className="py-3 whitespace-nowrap">
+                      <div className="font-bold text-[13px]">{patient.name}</div>
+                      <div className="text-[11px] text-[#64748B]">{patient.age} años • {patient.gender}</div>
+                    </TableCell>
+                    <TableCell className="text-[12px] font-mono whitespace-nowrap">{patient.curp}</TableCell>
+                    <TableCell className="text-[12px] text-[#64748B] whitespace-nowrap">{patient.lastVisit}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {role === 'RECEPCION' ? (
+                        <span className="text-[10px] text-[#FC0000] font-bold italic">Acceso Restringido</span>
+                      ) : (
+                        <Badge variant="outline" className="text-[#047E29] border-[#CDCC34] text-[10px] bg-white">
+                          {patient.lastDiagnosis || 'Sin registro'}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[#047E29]" onClick={() => navigate(`/notes?patientId=${patient.id}`)}>
+                          <FileText size={14} />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[#64748B]" onClick={() => handleEdit(patient)}>
+                          <Eye size={14} />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[#FC0000]" onClick={() => handleDelete(patient.id, patient.name)}>
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

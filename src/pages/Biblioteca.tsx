@@ -7,21 +7,34 @@ import {
   Download,
   Trash2,
   FileUp,
-  MoreVertical
+  MoreVertical,
+  FileSpreadsheet,
+  Save
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card';
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { LibraryFile, storage } from '@/src/lib/storage';
 import { toast } from 'sonner';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+
+import { useAuth } from '../contexts/AuthContext';
+import AccessDenied from '../components/AccessDenied';
 
 export default function Biblioteca() {
+  const { role } = useAuth();
   const [files, setFiles] = useState<LibraryFile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     setFiles(storage.getLibraryFiles());
   }, []);
+
+  if (role !== 'ADMIN' && role !== 'MEDICO') {
+    return <AccessDenied moduleName="Biblioteca" requiredRole="Médico / Administrador" />;
+  }
 
   const handleUpload = () => {
     const newFile: LibraryFile = {
@@ -37,18 +50,52 @@ export default function Biblioteca() {
     toast.success('Documento guardado en la biblioteca local');
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.addImage('https://appdesignproyectos.com/neo.png', 'PNG', 10, 10, 20, 20);
+    doc.setFontSize(18);
+    doc.setTextColor(4, 126, 41);
+    doc.text('Dr. Mario Mendoza', 35, 20);
+    doc.setFontSize(10);
+    doc.text('INVENTARIO DE BIBLIOTECA MÉDICA', 35, 26);
+    
+    autoTable(doc, {
+      startY: 35,
+      head: [['Nombre', 'Tipo', 'Tamaño', 'Fecha']],
+      body: files.map(f => [f.name, f.type, f.size, f.date]),
+      theme: 'grid',
+      headStyles: { fillColor: [4, 126, 41] }
+    });
+    doc.save('Inventario_Biblioteca.pdf');
+  };
+
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(files);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Biblioteca');
+    XLSX.writeFile(wb, 'Inventario_Biblioteca.xlsx');
+  };
+
   const filteredFiles = files.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-[#282829]">Biblioteca Médica</h2>
           <p className="text-[#64748B] text-sm">Repositorio de guías, protocolos y consentimientos informados.</p>
         </div>
-        <Button onClick={handleUpload} className="bg-[#047E29] hover:bg-[#036621] gap-2">
-          <FileUp size={18} /> Subir Documento
-        </Button>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button onClick={exportToExcel} variant="outline" className="flex-1 sm:flex-none gap-2 border-[#E2E8F0] h-9 text-xs">
+            <FileSpreadsheet size={16} /> Excel
+          </Button>
+          <Button onClick={exportToPDF} variant="outline" className="flex-1 sm:flex-none gap-2 border-[#E2E8F0] h-9 text-xs">
+            <FileText size={16} /> PDF
+          </Button>
+          <Button onClick={handleUpload} className="flex-1 sm:flex-none bg-[#047E29] hover:bg-[#036621] text-white gap-2 shadow-md h-9 text-xs">
+            <FileUp size={16} /> Subir Documento
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4 items-center mb-6">

@@ -108,7 +108,32 @@ const MOCK_PAYMENTS: Payment[] = [
   { id: '5', patientId: '2', patientName: 'María López', amount: 800, iva: 128, total: 928, date: new Date().toISOString().split('T')[0], method: 'Tarjeta', folio: 'REC-005' },
 ];
 
+export type UserRole = 'ADMIN' | 'MEDICO' | 'RECEPCION' | 'PACIENTE';
+
+export interface User {
+  id: string;
+  name: string;
+  role: UserRole;
+  email: string;
+}
+
+const MOCK_USERS: User[] = [
+  { id: 'u1', name: 'Dr. Mario Mendoza', role: 'ADMIN', email: 'mario@mendoza.com' },
+  { id: 'u2', name: 'Dr. Sergio Ramos', role: 'MEDICO', email: 'sergio@mendoza.com' },
+  { id: 'u3', name: 'Lic. Ana Sosa', role: 'RECEPCION', email: 'ana@mendoza.com' },
+  { id: 'u4', name: 'Juan Pérez', role: 'PACIENTE', email: 'juan.perez@email.com' },
+];
+
 export const storage = {
+  getUsers: (): User[] => {
+    const stored = localStorage.getItem('users');
+    if (!stored) {
+      localStorage.setItem('users', JSON.stringify(MOCK_USERS));
+      return MOCK_USERS;
+    }
+    return JSON.parse(stored);
+  },
+  
   getPatients: (): Patient[] => {
     const stored = localStorage.getItem('patients');
     if (!stored) {

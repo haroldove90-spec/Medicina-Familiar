@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   UserRound, 
@@ -20,10 +20,14 @@ import {
   FolderOpen,
   Printer,
   Trash2,
-  Eye
+  Eye,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { cn } from '@/src/lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
+import { useAuth } from '../contexts/AuthContext';
+import { UserRole } from '../lib/storage';
 
 interface NavItemProps {
   to: string;
@@ -31,17 +35,19 @@ interface NavItemProps {
   label: string;
   active?: boolean;
   onClick?: () => void;
+  className?: string;
+  key?: string | number;
 }
 
-const NavItem = ({ to, icon, label, active, onClick }: NavItemProps) => (
-  <Link
-    to={to}
+const NavItem = ({ to, icon, label, active, onClick, className }: NavItemProps) => (
+  <button
     onClick={onClick}
     className={cn(
-      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+      "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative",
       active 
         ? "bg-[#CDCC34] text-[#047E29] shadow-md" 
-        : "text-white/70 hover:text-white hover:bg-white/5"
+        : "text-white/70 hover:text-white hover:bg-white/5",
+      className
     )}
   >
     <span className={cn(
@@ -51,17 +57,20 @@ const NavItem = ({ to, icon, label, active, onClick }: NavItemProps) => (
       {icon}
     </span>
     <span className="text-sm font-bold tracking-tight">{label}</span>
-  </Link>
+    {active && (
+      <motion.div 
+        layoutId="activeNav"
+        className="absolute left-0 w-1 h-6 bg-white rounded-r-full"
+      />
+    )}
+  </button>
 );
 
 export default function MedicalLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const handleLogout = () => {
-    navigate('/login');
-  };
+  const { user, role, setRole, logout } = useAuth();
 
   const currentDate = new Date().toLocaleDateString('es-MX', { 
     day: 'numeric', 
@@ -69,8 +78,110 @@ export default function MedicalLayout({ children }: { children: React.ReactNode 
     year: 'numeric' 
   });
 
+  const menuItems = [
+    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/', roles: ['ADMIN', 'MEDICO', 'RECEPCION'] },
+    { icon: <UserRound size={20} />, label: 'Expedientes', path: '/expedientes', roles: ['ADMIN', 'MEDICO'] },
+    { icon: <Calendar size={20} />, label: 'Agenda', path: '/agenda', roles: ['ADMIN', 'MEDICO', 'RECEPCION', 'PACIENTE'] },
+    { icon: <Users size={20} />, label: 'Médicos', path: '/medicos', roles: ['ADMIN'] },
+    { icon: <Library size={20} />, label: 'Biblioteca', path: '/biblioteca', roles: ['ADMIN', 'MEDICO'] },
+    { icon: <CreditCard size={20} />, label: 'Cargos', path: '/cargos', roles: ['ADMIN', 'RECEPCION'] },
+    { icon: <Receipt size={20} />, label: 'Cobros', path: '/cobros', roles: ['ADMIN', 'RECEPCION'] },
+    { icon: <History size={20} />, label: 'Audit Log', path: '/audit', roles: ['ADMIN'] },
+  ];
+
+  const filteredMenuItems = menuItems.filter(item => item.roles.includes(role));
+
+  const roleLabels: Record<UserRole, string> = {
+    ADMIN: 'Administrador',
+    MEDICO: 'Médico',
+    RECEPCION: 'Recepción',
+    PACIENTE: 'Paciente'
+  };
+
+  const roleColors: Record<UserRole, string> = {
+    ADMIN: 'bg-[#CDCC34] text-[#047E29]',
+    MEDICO: 'bg-white text-[#047E29]',
+    RECEPCION: 'bg-[#EBFBCA] text-[#047E29]',
+    PACIENTE: 'bg-white/20 text-white'
+  };
+
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [showLogoutWarning, setShowLogoutWarning] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const inactiveTime = Date.now() - lastActivity;
+      if (inactiveTime > 5 * 60 * 1000 && !showLogoutWarning) { // 5 minutes
+        setShowLogoutWarning(true);
+      }
+    }, 10000);
+
+    const handleActivity = () => {
+      setLastActivity(Date.now());
+      if (showLogoutWarning) setShowLogoutWarning(false);
+    };
+
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+    };
+  }, [lastActivity, showLogoutWarning]);
+
   return (
     <div className="flex h-screen bg-[#F8FAFC] font-sans text-[#282829] overflow-hidden">
+      {/* Auto-Logout Warning */}
+      <AnimatePresence>
+        {showLogoutWarning && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-[#FC0000] text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border-2 border-white/20"
+          >
+            <ShieldCheck size={20} className="animate-pulse" />
+            <div className="text-xs font-bold">
+              <p className="uppercase tracking-wider">Aviso de Seguridad</p>
+              <p className="opacity-90 font-medium">Sesión inactiva. Se cerrará automáticamente pronto por protección de datos.</p>
+            </div>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="text-white hover:bg-white/20 h-8 text-[10px] font-bold"
+              onClick={() => {
+                setLastActivity(Date.now());
+                setShowLogoutWarning(false);
+              }}
+            >
+              MANTENER SESIÓN
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Role Selector for Development */}
+      <div className="fixed bottom-4 right-4 z-[100] bg-white p-3 rounded-2xl shadow-2xl border border-[#E2E8F0] flex flex-col gap-2">
+        <span className="text-[10px] font-bold text-[#64748B] uppercase text-center">Simular Rol (Dev)</span>
+        <div className="flex gap-1">
+          {(['ADMIN', 'MEDICO', 'RECEPCION', 'PACIENTE'] as UserRole[]).map((r) => (
+            <button
+              key={r}
+              onClick={() => setRole(r)}
+              className={cn(
+                "px-2 py-1 rounded text-[10px] font-bold transition-all",
+                role === r 
+                  ? "bg-[#047E29] text-white shadow-md scale-105" 
+                  : "bg-[#F8FAFC] text-[#64748B] hover:bg-[#EBFBCA]"
+              )}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex w-[260px] bg-[#047E29] border-r border-[#036621] flex-col p-6 text-white shrink-0 shadow-2xl z-20">
         <div className="flex items-center gap-3 mb-8">
@@ -89,70 +200,34 @@ export default function MedicalLayout({ children }: { children: React.ReactNode 
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto pr-2 custom-scrollbar">
-          <NavItem 
-            to="/" 
-            icon={<LayoutDashboard size={18} />} 
-            label="Dashboard" 
-            active={location.pathname === '/'} 
-          />
-          <NavItem 
-            to="/expedientes" 
-            icon={<UserRound size={18} />} 
-            label="Expedientes (NOM-024)" 
-            active={location.pathname.startsWith('/expedientes')} 
-          />
-          <NavItem 
-            to="/agenda" 
-            icon={<Calendar size={18} />} 
-            label="Agenda de Citas" 
-            active={location.pathname.startsWith('/agenda')} 
-          />
-          <NavItem 
-            to="/medicos" 
-            icon={<Users size={18} />} 
-            label="Médicos" 
-            active={location.pathname.startsWith('/medicos')} 
-          />
-          <NavItem 
-            to="/biblioteca" 
-            icon={<Library size={18} />} 
-            label="Biblioteca" 
-            active={location.pathname.startsWith('/biblioteca')} 
-          />
-          <NavItem 
-            to="/cargos" 
-            icon={<CreditCard size={18} />} 
-            label="Cargos" 
-            active={location.pathname.startsWith('/cargos')} 
-          />
-          <NavItem 
-            to="/cobros" 
-            icon={<Receipt size={18} />} 
-            label="Cobros" 
-            active={location.pathname.startsWith('/cobros')} 
-          />
-          <NavItem 
-            to="/audit" 
-            icon={<History size={18} />} 
-            label="Bitácora de Auditoría" 
-            active={location.pathname === '/audit'} 
-          />
+          {filteredMenuItems.map((item) => (
+            <NavItem 
+              key={item.path}
+              to={item.path} 
+              icon={item.icon} 
+              label={item.label} 
+              active={location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))} 
+              onClick={() => navigate(item.path)}
+            />
+          ))}
         </nav>
 
         <div className="mt-auto pt-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#047E29] font-bold text-xs shadow-md">
-              MM
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#047E29] font-bold text-sm shadow-md">
+              {user?.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">Dr. Mario Mendoza</p>
-              <p className="text-[11px] text-white/60 truncate">Médico Especialista</p>
+              <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
+              <div className={cn("inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider mt-0.5", roleColors[role])}>
+                {roleLabels[role]}
+              </div>
             </div>
           </div>
           <Button 
             variant="ghost" 
             className="w-full justify-start gap-3 text-white/70 hover:text-[#FC0000] hover:bg-white/10 px-4 py-2 h-auto"
-            onClick={handleLogout}
+            onClick={logout}
           >
             <LogOut size={18} />
             <span className="text-sm font-medium">Cerrar Sesión</span>
@@ -163,54 +238,81 @@ export default function MedicalLayout({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <>
-          <div 
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <div className="fixed inset-y-0 left-0 z-50 w-[300px] max-w-[80%] bg-[#047E29] flex flex-col p-6 text-white overflow-y-auto shadow-2xl lg:hidden">
-            <div className="flex justify-between items-center mb-10">
-              <div className="flex items-center gap-3">
-                <div className="bg-white p-1.5 rounded-lg">
-                  <img src="https://appdesignproyectos.com/neo.png" alt="Logo" className="w-8 h-8 object-contain" />
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+            />
+            <motion.aside 
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 z-50 w-[300px] max-w-[80%] bg-[#047E29] flex flex-col p-6 text-white overflow-y-auto shadow-2xl lg:hidden"
+            >
+              <div className="flex justify-between items-center mb-10">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white p-1.5 rounded-lg">
+                    <img src="https://appdesignproyectos.com/neo.png" alt="Logo" className="w-8 h-8 object-contain" />
+                  </div>
+                  <h1 className="text-lg font-bold text-white">Dr. Mario</h1>
                 </div>
-                <h1 className="text-lg font-bold text-white">Dr. Mario</h1>
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <X size={24} />
+                </button>
               </div>
-              <button 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <nav className="flex-1 space-y-2">
-              <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" active={location.pathname === '/'} onClick={() => setIsMobileMenuOpen(false)} />
-              <NavItem to="/expedientes" icon={<UserRound size={20} />} label="Expedientes" active={location.pathname.startsWith('/expedientes')} onClick={() => setIsMobileMenuOpen(false)} />
-              <NavItem to="/agenda" icon={<Calendar size={20} />} label="Agenda" active={location.pathname.startsWith('/agenda')} onClick={() => setIsMobileMenuOpen(false)} />
-              <NavItem to="/medicos" icon={<Users size={20} />} label="Médicos" active={location.pathname.startsWith('/medicos')} onClick={() => setIsMobileMenuOpen(false)} />
-              <NavItem to="/biblioteca" icon={<Library size={20} />} label="Biblioteca" active={location.pathname.startsWith('/biblioteca')} onClick={() => setIsMobileMenuOpen(false)} />
-              <NavItem to="/cargos" icon={<CreditCard size={20} />} label="Cargos" active={location.pathname.startsWith('/cargos')} onClick={() => setIsMobileMenuOpen(false)} />
-              <NavItem to="/cobros" icon={<Receipt size={20} />} label="Cobros" active={location.pathname.startsWith('/cobros')} onClick={() => setIsMobileMenuOpen(false)} />
-              <NavItem to="/audit" icon={<History size={20} />} label="Audit Log" active={location.pathname === '/audit'} onClick={() => setIsMobileMenuOpen(false)} />
-            </nav>
-          </div>
-        </>
-      )}
+              <nav className="flex-1 space-y-2">
+                {filteredMenuItems.map((item) => (
+                  <NavItem 
+                    key={item.path}
+                    to={item.path} 
+                    icon={item.icon} 
+                    label={item.label} 
+                    active={location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))} 
+                    onClick={() => {
+                      navigate(item.path);
+                      setIsMobileMenuOpen(false);
+                    }} 
+                  />
+                ))}
+              </nav>
+              <div className="mt-auto pt-4 border-t border-white/10">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                  <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-[#047E29] font-bold">
+                    {user?.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{user?.name}</p>
+                    <p className="text-[10px] font-bold text-[#CDCC34] uppercase">{roleLabels[role]}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F8FAFC]">
         {/* Header / Top Bar */}
-        <header className="h-20 bg-white border-b border-[#E2E8F0] flex flex-col shrink-0 shadow-sm z-10">
-          <div className="flex-1 flex items-center justify-between px-4 lg:px-8">
-            <div className="flex items-center gap-4 flex-1">
-              <button className="lg:hidden p-2 text-[#64748B]" onClick={() => setIsMobileMenuOpen(true)}>
+        <header className="h-auto min-h-[5rem] lg:h-20 bg-white border-b border-[#E2E8F0] flex flex-col shrink-0 shadow-sm z-10 py-2 lg:py-0">
+          <div className="flex-1 flex flex-wrap items-center justify-between px-4 lg:px-8 gap-4">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <button className="lg:hidden p-2 text-[#64748B] shrink-0" onClick={() => setIsMobileMenuOpen(true)}>
                 <Menu size={20} />
               </button>
               
               {/* Cinta de Herramientas (Quick Access) */}
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden md:flex flex-wrap items-center gap-2">
                 <Button size="sm" className="bg-[#047E29] hover:bg-[#036621] text-white gap-1.5 h-9 rounded-lg px-4 shadow-sm">
                   <Plus size={16} /> Nuevo
                 </Button>
@@ -229,7 +331,7 @@ export default function MedicalLayout({ children }: { children: React.ReactNode 
               </div>
             </div>
 
-            <div className="flex items-center gap-3 lg:gap-6">
+            <div className="flex items-center gap-3 lg:gap-6 shrink-0">
               <div className="hidden sm:flex flex-col items-end">
                 <p className="text-xs font-bold text-[#282829] uppercase tracking-wider">{currentDate}</p>
                 <p className="text-[10px] text-[#64748B] font-medium">Consultorio Activo</p>
@@ -245,7 +347,7 @@ export default function MedicalLayout({ children }: { children: React.ReactNode 
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#F8FAFC]/50">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8 bg-[#F8FAFC]/50">
           <div className="max-w-[1600px] mx-auto">
             {children}
           </div>

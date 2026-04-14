@@ -60,7 +60,11 @@ const noteSchema = z.object({
 
 type NoteFormValues = z.infer<typeof noteSchema>;
 
+import { useAuth } from '../contexts/AuthContext';
+import AccessDenied from '../components/AccessDenied';
+
 export default function MedicalNote() {
+  const { role } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
@@ -98,6 +102,10 @@ export default function MedicalNote() {
       setSelectedPatientId(data[0].id);
     }
   }, []);
+
+  if (role !== 'ADMIN' && role !== 'MEDICO') {
+    return <AccessDenied moduleName="Notas Médicas" requiredRole="Médico / Administrador" />;
+  }
 
   useEffect(() => {
     if (selectedPatientId) {
