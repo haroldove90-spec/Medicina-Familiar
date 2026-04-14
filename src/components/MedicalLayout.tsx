@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -7,7 +7,10 @@ import {
   History, 
   LogOut, 
   Stethoscope,
-  Search
+  Search,
+  Menu,
+  X,
+  Bell
 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { cn } from '@/src/lib/utils';
@@ -23,34 +26,54 @@ const NavItem = ({ to, icon, label, active }: NavItemProps) => (
   <Link
     to={to}
     className={cn(
-      "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
       active 
-        ? "bg-blue-50 text-blue-600 font-medium" 
-        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+        ? "bg-white/10 text-white shadow-sm" 
+        : "text-white/70 hover:text-white hover:bg-white/5"
     )}
   >
-    {icon}
-    <span className="text-sm">{label}</span>
+    <span className={cn(
+      "transition-transform duration-200 group-hover:scale-110",
+      active ? "text-[#CDCC34]" : "text-white/50 group-hover:text-white"
+    )}>
+      {icon}
+    </span>
+    <span className="text-sm font-semibold tracking-tight">{label}</span>
   </Link>
 );
 
 export default function MedicalLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     navigate('/login');
   };
 
+  const currentDate = new Date().toLocaleDateString('es-MX', { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  });
+
   return (
-    <div className="flex h-screen bg-[#F8FAFC] font-sans text-[#1E293B]">
-      {/* Sidebar */}
-      <aside className="w-[240px] bg-white border-r border-[#E2E8F0] flex flex-col p-6">
-        <div className="flex items-center gap-2 mb-10">
-          <div className="w-7 h-7 bg-[#2563EB] rounded-md flex items-center justify-center text-white">
-            <Stethoscope size={18} />
+    <div className="flex h-screen bg-[#F8FAFC] font-sans text-[#282829] overflow-hidden">
+      {/* Sidebar - Desktop */}
+      <aside className="hidden lg:flex w-[240px] bg-[#047E29] border-r border-[#036621] flex-col p-6 text-white shrink-0">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="bg-white p-1.5 rounded-lg">
+            <img 
+              src="https://appdesignproyectos.com/neo.png" 
+              alt="Logo" 
+              className="w-8 h-8 object-contain"
+              referrerPolicy="no-referrer"
+            />
           </div>
-          <h1 className="text-xl font-bold text-[#2563EB] tracking-tight">MediSync</h1>
+          <div>
+            <h1 className="text-lg font-bold text-white tracking-tight leading-tight">Dr. Mario</h1>
+            <p className="text-[10px] font-bold text-[#CDCC34] uppercase tracking-widest">Mendoza</p>
+          </div>
         </div>
 
         <nav className="flex-1 space-y-1">
@@ -80,49 +103,86 @@ export default function MedicalLayout({ children }: { children: React.ReactNode 
           />
         </nav>
 
-        <div className="mt-auto pt-4 border-t border-[#E2E8F0]">
+        <div className="mt-auto pt-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-full bg-[#CBD5E1] flex items-center justify-center text-white font-bold text-xs">
-              HO
+            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#047E29] font-bold text-xs">
+              MM
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#1E293B] truncate">Dr. Harold Ove</p>
-              <p className="text-[11px] text-[#64748B] truncate">Medicina General • ID 45920</p>
+              <p className="text-sm font-semibold text-white truncate">Dr. Mario Mendoza</p>
+              <p className="text-[11px] text-white/60 truncate">Médico Especialista</p>
             </div>
           </div>
           <Button 
             variant="ghost" 
-            className="w-full justify-start gap-3 text-[#64748B] hover:text-[#EF4444] hover:bg-red-50 px-4 py-2 h-auto"
+            className="w-full justify-start gap-3 text-white/70 hover:text-[#FC0000] hover:bg-white/10 px-4 py-2 h-auto"
             onClick={handleLogout}
           >
             <LogOut size={18} />
             <span className="text-sm font-medium">Cerrar Sesión</span>
           </Button>
-          <div className="mt-4 px-2 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded text-[10px] text-[#64748B] font-medium text-center">
+          <div className="mt-4 px-2 py-1 bg-[#CDCC34]/20 border border-[#CDCC34]/30 rounded text-[10px] text-[#EBFBCA] font-bold text-center">
             NOM-024 / COFEPRIS Compliant
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-8 sticky top-0 z-10">
-          <div className="flex items-center gap-4 bg-[#F8FAFC] border border-[#E2E8F0] px-4 py-2 rounded-full w-[320px]">
-            <Search size={16} className="text-[#64748B]" />
-            <input 
-              type="text" 
-              placeholder="Buscar paciente por nombre o CURP..." 
-              className="bg-transparent border-none outline-none text-[13px] w-full text-[#1E293B] placeholder:text-[#64748B]"
-            />
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden bg-[#047E29] flex flex-col p-6 text-white">
+          <div className="flex justify-between items-center mb-10">
+            <div className="flex items-center gap-3">
+              <div className="bg-white p-1.5 rounded-lg">
+                <img src="https://appdesignproyectos.com/neo.png" alt="Logo" className="w-8 h-8 object-contain" />
+              </div>
+              <h1 className="text-lg font-bold text-white">Dr. Mario Mendoza</h1>
+            </div>
+            <button onClick={() => setIsMobileMenuOpen(false)}>
+              <X size={24} />
+            </button>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-[11px] font-bold text-[#64748B] uppercase tracking-widest">Hoy</p>
-              <p className="text-sm font-semibold text-[#1E293B]">{new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          <nav className="flex-1 space-y-2">
+            <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" active={location.pathname === '/'} />
+            <NavItem to="/patients" icon={<UserRound size={20} />} label="Pacientes" active={location.pathname.startsWith('/patients')} />
+            <NavItem to="/notes" icon={<FileText size={20} />} label="Expediente" active={location.pathname.startsWith('/notes')} />
+            <NavItem to="/audit" icon={<History size={20} />} label="Audit Log" active={location.pathname === '/audit'} />
+          </nav>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header */}
+        <header className="h-16 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-4 lg:px-8 shrink-0">
+          <div className="flex items-center gap-4 flex-1">
+            <button className="lg:hidden p-2 text-[#64748B]" onClick={() => setIsMobileMenuOpen(true)}>
+              <Menu size={20} />
+            </button>
+            <div className="relative max-w-md w-full hidden md:block">
+              <Search className="absolute left-3 top-2.5 text-[#64748B]" size={16} />
+              <input 
+                placeholder="Buscar paciente o diagnóstico..." 
+                className="w-full pl-10 h-10 border border-[#E2E8F0] rounded-xl text-sm bg-[#F8FAFC] focus:ring-2 focus:ring-[#047E29] outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 lg:gap-6">
+            <div className="hidden sm:flex flex-col items-end">
+              <p className="text-xs font-bold text-[#282829] uppercase tracking-wider">{currentDate}</p>
+              <p className="text-[10px] text-[#64748B]">Consultorio Activo</p>
+            </div>
+            <div className="w-px h-8 bg-[#E2E8F0] hidden sm:block"></div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-[#EBFBCA] flex items-center justify-center text-[#047E29]">
+                <Bell size={18} />
+              </div>
             </div>
           </div>
         </header>
-        <main className="flex-1 overflow-auto p-6">
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           {children}
         </main>
       </div>

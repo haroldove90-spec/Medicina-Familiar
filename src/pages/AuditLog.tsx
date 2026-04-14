@@ -11,35 +11,34 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/src
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/components/ui/table';
 import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';
-import { AuditLog as AuditLogType } from '@/src/types';
+import { storage } from '@/src/lib/storage';
 
 export default function AuditLog() {
-  const [logs, setLogs] = useState<AuditLogType[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/audit-logs')
-      .then(res => res.json())
-      .then(data => {
-        setLogs(data);
-        setLoading(false);
-      });
+    const data = storage.getAuditLogs();
+    setLogs(data);
+    setLoading(false);
   }, []);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-[#1E293B] flex items-center justify-center text-white">
+          <div className="w-10 h-10 rounded-lg bg-[#047E29] flex items-center justify-center text-white">
             <History size={20} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[#1E293B] tracking-tight">Bitácora de Auditoría</h2>
+            <h2 className="text-xl font-bold text-[#282829] tracking-tight">Bitácora de Auditoría</h2>
             <p className="text-[#64748B] text-xs">Registro inmutable de acciones según normativa COFEPRIS.</p>
           </div>
         </div>
         <div className="flex gap-3">
-          <span className="audit-pill self-center">NOM-024 / COFEPRIS Compliant</span>
+          <div className="px-3 py-1 bg-[#EBFBCA] border border-[#CDCC34] rounded text-[10px] text-[#047E29] font-bold self-center">
+            NOM-024 / COFEPRIS Compliant
+          </div>
           <Button variant="outline" className="gap-2 h-9 text-xs font-semibold border-[#E2E8F0]">
             <Download size={14} />
             Exportar Reporte
@@ -49,7 +48,7 @@ export default function AuditLog() {
 
       <Card className="border-[#E2E8F0] shadow-none rounded-xl overflow-hidden bg-white">
         <CardHeader className="p-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
-          <div className="flex items-center gap-2 text-[#10B981]">
+          <div className="flex items-center gap-2 text-[#047E29]">
             <ShieldCheck size={16} />
             <CardTitle className="text-[11px] font-bold uppercase tracking-wider">Integridad de Datos Verificada</CardTitle>
           </div>
@@ -76,13 +75,13 @@ export default function AuditLog() {
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3">
-                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[#1E293B]">
+                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[#282829]">
                         <User size={14} className="text-[#64748B]" />
                         {log.user}
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3">
-                      <Badge variant="outline" className="bg-[#EFF6FF] text-[#2563EB] border-[#E2E8F0] font-mono text-[10px] rounded px-2">
+                      <Badge variant="outline" className="bg-[#EBFBCA] text-[#047E29] border-[#CDCC34] font-mono text-[10px] rounded px-2">
                         {log.action}
                       </Badge>
                     </TableCell>
@@ -93,7 +92,7 @@ export default function AuditLog() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right px-6 py-3">
-                      <span className="audit-pill bg-[#ECFDF5] text-[#10B981] border-[#D1FAE5]">
+                      <span className="px-2 py-1 bg-[#EBFBCA] text-[#047E29] border border-[#CDCC34] rounded-[4px] text-[10px] font-bold uppercase tracking-wider">
                         Firmado
                       </span>
                     </TableCell>

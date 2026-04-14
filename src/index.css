@@ -50,33 +50,33 @@
 
 :root {
     --background: #F8FAFC;
-    --foreground: #1E293B;
+    --foreground: #282829;
     --card: #FFFFFF;
-    --card-foreground: #1E293B;
+    --card-foreground: #282829;
     --popover: #FFFFFF;
-    --popover-foreground: #1E293B;
-    --primary: #2563EB;
+    --popover-foreground: #282829;
+    --primary: #047E29;
     --primary-foreground: #FFFFFF;
-    --secondary: #EFF6FF;
-    --secondary-foreground: #2563EB;
+    --secondary: #EBFBCA;
+    --secondary-foreground: #047E29;
     --muted: #F1F5F9;
     --muted-foreground: #64748B;
-    --accent: #EFF6FF;
-    --accent-foreground: #2563EB;
-    --destructive: #EF4444;
+    --accent: #CDCC34;
+    --accent-foreground: #282829;
+    --destructive: #FC0000;
     --destructive-foreground: #FFFFFF;
     --border: #E2E8F0;
     --input: #E2E8F0;
-    --ring: #2563EB;
+    --ring: #047E29;
     --radius: 0.75rem;
     --sidebar: #FFFFFF;
-    --sidebar-foreground: #1E293B;
-    --sidebar-primary: #2563EB;
+    --sidebar-foreground: #282829;
+    --sidebar-primary: #047E29;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #EFF6FF;
-    --sidebar-accent-foreground: #2563EB;
+    --sidebar-accent: #EBFBCA;
+    --sidebar-accent-foreground: #047E29;
     --sidebar-border: #E2E8F0;
-    --sidebar-ring: #2563EB;
+    --sidebar-ring: #047E29;
 }
 
 .dark {

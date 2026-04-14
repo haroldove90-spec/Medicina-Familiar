@@ -1,0 +1,23 @@
+{
+  "name": "Dr. Mario Mendoza",
+  "short_name": "Dr. Mendoza",
+  "description": "Software médico especializado para el consultorio del Dr. Mario Mendoza.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#047E29",
+  "icons": [
+    {
+      "src": "https://appdesignproyectos.com/neo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://appdesignproyectos.com/neo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
