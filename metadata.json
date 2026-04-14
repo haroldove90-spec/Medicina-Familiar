@@ -1,0 +1,6 @@
+{
+  "name": "MediFlow Digital",
+  "description": "Plataforma integral para consultorios médicos con expediente clínico digital (NOM-024) y cumplimiento COFEPRIS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
